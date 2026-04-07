@@ -1,0 +1,46 @@
+# macOS
+.DS_Store
+.AppleDouble
+.LSOverride
+Icon?
+._*
+
+# Python: bytecode / cache
+__pycache__/
+*.py[cod]
+*$py.class
+.pytest_cache/
+.mypy_cache/
+.ruff_cache/
+.coverage
+htmlcov/
+
+# Виртуальные окружения
+.venv/
+venv/
+ENV/
+
+# IDE
+.idea/
+.vscode/
+
+# Локальные секреты и окружение
+.env
+
+# База данных SQLite (локальная)
+app.db
+*.db
+*.sqlite
+*.sqlite3
+
+# Логи
+*.log
+
+# Сборка/дистрибуция
+build/
+dist/
+*.egg-info/
+
+# uv / менеджеры
+uv.lock
+
