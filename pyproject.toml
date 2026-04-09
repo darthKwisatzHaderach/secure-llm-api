@@ -20,5 +20,9 @@ dependencies = [
   "ruff>=0.14.14",
 ]
 
-[tool.uv]
-dev-dependencies = []
+[dependency-groups]
+dev = ["pytest>=8.0"]
+
+[tool.pytest.ini_options]
+testpaths = ["tests"]
+pythonpath = ["."]

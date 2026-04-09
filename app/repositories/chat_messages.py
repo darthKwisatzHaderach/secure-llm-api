@@ -25,7 +25,7 @@ class ChatMessageRepository:
         stmt = (
             select(ChatMessage)
             .where(ChatMessage.user_id == user_id)
-            .order_by(ChatMessage.created_at.desc())
+            .order_by(ChatMessage.created_at.desc(), ChatMessage.id.desc())
             .limit(limit)
         )
         result = await self._session.execute(stmt)
