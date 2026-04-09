@@ -1,5 +1,5 @@
 [project]
-name = "llm-p"
+name = "secure-llm-api"
 version = "0.1.0"
 description = "FastAPI service with JWT auth, SQLite, and OpenRouter LLM proxy"
 readme = "README.md"
