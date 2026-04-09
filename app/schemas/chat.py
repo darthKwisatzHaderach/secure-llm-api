@@ -1,4 +1,6 @@
-from pydantic import BaseModel, Field
+from datetime import datetime
+
+from pydantic import BaseModel, ConfigDict, Field
 
 
 class ChatRequest(BaseModel):
@@ -24,3 +26,14 @@ class ChatResponse(BaseModel):
     """Ответ модели пользователю."""
 
     answer: str
+
+
+class ChatMessagePublic(BaseModel):
+    """Одно сообщение в истории (для GET /chat/history)."""
+
+    model_config = ConfigDict(from_attributes=True)
+
+    id: int
+    role: str
+    content: str
+    created_at: datetime
