@@ -9,6 +9,7 @@ from app.api.routes_auth import router as auth_router
 from app.api.routes_chat import router as chat_router
 from app.core.config import settings
 from app.core.errors import (
+    AppError,
     ConflictError,
     ExternalServiceError,
     ForbiddenError,
@@ -18,13 +19,17 @@ from app.core.errors import (
 from app.db.base import Base
 from app.db import models as _models  # noqa: F401
 from app.db.session import engine
+from sqlalchemy.exc import IntegrityError
 
 
 @asynccontextmanager
 async def lifespan(_: FastAPI) -> AsyncIterator[None]:
     async with engine.begin() as conn:
         await conn.run_sync(Base.metadata.create_all)
-    yield
+    try:
+        yield
+    finally:
+        await engine.dispose()
 
 
 def _register_domain_exception_handlers(app: FastAPI) -> None:
@@ -49,6 +54,23 @@ def _register_domain_exception_handlers(app: FastAPI) -> None:
     @app.exception_handler(ExternalServiceError)
     async def _external(_: Request, exc: ExternalServiceError) -> JSONResponse:
         return JSONResponse(status_code=502, content={"detail": exc.message})
+
+    @app.exception_handler(IntegrityError)
+    async def _integrity(_: Request, exc: IntegrityError) -> JSONResponse:
+        # Гонка при регистрации и т.п.; без утечки SQL в ответ
+        _ = exc
+        return JSONResponse(
+            status_code=409,
+            content={"detail": "Конфликт данных (например, email уже занят)"},
+        )
+
+    @app.exception_handler(AppError)
+    async def _app_error_fallback(_: Request, exc: AppError) -> JSONResponse:
+        """Остальные доменные ошибки без отдельного HTTP-маппинга."""
+        return JSONResponse(
+            status_code=500,
+            content={"detail": exc.message or "Внутренняя ошибка приложения"},
+        )
 
 
 def create_app() -> FastAPI:

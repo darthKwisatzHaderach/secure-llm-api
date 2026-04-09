@@ -3,12 +3,12 @@
 from collections.abc import AsyncIterator
 from typing import Annotated
 
-from fastapi import Depends, HTTPException
+from fastapi import Depends
 from fastapi.security import OAuth2PasswordBearer
 from sqlalchemy.ext.asyncio import AsyncSession
 
 from app.core.config import settings
-from app.core.errors import UnauthorizedError as DomainUnauthorizedError
+from app.core.errors import UnauthorizedError
 from app.core.security import decode_access_token
 from app.db.session import AsyncSessionLocal
 from app.repositories.chat_messages import ChatMessageRepository
@@ -26,11 +26,15 @@ async def get_session() -> AsyncIterator[AsyncSession]:
         yield session
 
 
-def get_user_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> UserRepository:
+def get_user_repo(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> UserRepository:
     return UserRepository(session)
 
 
-def get_chat_repo(session: Annotated[AsyncSession, Depends(get_session)]) -> ChatMessageRepository:
+def get_chat_repo(
+    session: Annotated[AsyncSession, Depends(get_session)],
+) -> ChatMessageRepository:
     return ChatMessageRepository(session)
 
 
@@ -54,17 +58,14 @@ def get_chat_usecase(
 async def get_current_user_id(
     token: Annotated[str, Depends(oauth2_scheme)],
 ) -> int:
-    """Декодирование JWT; доменная ошибка → HTTP 401."""
-    try:
-        payload = decode_access_token(token)
-    except DomainUnauthorizedError as e:
-        raise HTTPException(status_code=401, detail=e.message) from e
+    """Декодирование JWT; все проблемы токена — UnauthorizedError → единый JSON в обработчике."""
+    payload = decode_access_token(token)
 
     sub = payload.get("sub")
     if sub is None:
-        raise HTTPException(status_code=401, detail="В токене отсутствует sub")
+        raise UnauthorizedError("В токене отсутствует sub")
 
     try:
         return int(sub)
     except (TypeError, ValueError) as e:
-        raise HTTPException(status_code=401, detail="Некорректный идентификатор в sub") from e
+        raise UnauthorizedError("Некорректный идентификатор в sub") from e
